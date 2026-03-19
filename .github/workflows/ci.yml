@@ -15,20 +15,46 @@ on:
         options: [all, data_load, data_quality_analysis, data_research, visualization]
 
 jobs:
+  # ЕТАП 1: Завантаження даних (один раз)
+  load-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Download dataset
+        run: python src/data_load.py
+
+      - name: Upload Raw Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-dataset
+          path: data/raw/
+          retention-days: 1
+
+  # ЕТАП 2: Паралельний запуск модулів
   run-modules:
+    needs: load-data
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-
-        module: [data_load, data_quality_analysis, data_research, visualization]
+        # Виключаємо data_load з матриці
+        module: [data_quality_analysis, data_research, visualization]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
 
       - name: Check for changes in module
         id: changed-files
@@ -37,7 +63,6 @@ jobs:
           files: src/${{ matrix.module }}.py
 
       - name: Set up Python
-
         if: |
           github.ref == 'refs/heads/main' ||
           steps.changed-files.outputs.any_changed == 'true' ||
@@ -55,6 +80,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Download Raw Data
+        if: |
+          github.ref == 'refs/heads/main' ||
+          steps.changed-files.outputs.any_changed == 'true' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-dataset
+          path: data/raw/
 
       - name: Run module
         if: |
@@ -75,20 +110,16 @@ jobs:
       - name: Create HTML report for Pages
         if: matrix.module == 'visualization'
         run: |
-
           echo "<html><body style='font-family:sans-serif;padding:20px;'><h1>Visualization Results</h1>" > artifacts/${{ matrix.module }}/index.html
           echo "<p>BUILD DATE: $(date)</p><hr>" >> artifacts/${{ matrix.module }}/index.html
-
           for img in artifacts/${{ matrix.module }}/figures/*.png; do
             if [ -f "$img" ]; then
               fname=$(basename "$img")
               echo "<div><p>$fname</p><img src='figures/$fname' width='600'></div>" >> artifacts/${{ matrix.module }}/index.html
             fi
           done
-
           echo "</body></html>" >> artifacts/${{ matrix.module }}/index.html 
 
-        
       - name: Upload artifacts
         if: |
           github.ref == 'refs/heads/main' ||
@@ -98,8 +129,8 @@ jobs:
         with:
           name: artifacts-${{ matrix.module }}
           path: artifacts/${{ matrix.module }}/
-         
 
+  # ЕТАП 3: Деплой
   deploy-pages:
     needs: run-modules
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -125,7 +156,6 @@ jobs:
             sed -i 's|</body>|<hr><h3><a href="data_quality_report.md"> Переглянути Data Quality Report</a></h3></body>|' public/index.html
           fi
           ls -R public
-                 
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
