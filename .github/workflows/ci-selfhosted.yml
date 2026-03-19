@@ -1,4 +1,4 @@
-name: CI (self-hosted)
+name: CI (self-hosted-mac)
 
 on:
   workflow_dispatch:
@@ -12,7 +12,8 @@ on:
 
 jobs:
   run-module-local:
-    runs-on: [self-hosted, Windows, X64, local]
+    # Вказуємо мітки, які ти щойно налаштувала на своєму Mac
+    runs-on: [self-hosted, macOS, X64, local]
 
     steps:
       - name: Checkout repository
@@ -20,22 +21,24 @@ jobs:
 
       - name: Use system Python
         run: |
-          python --version
-          pip --version
+          # На Mac зазвичай використовується python3
+          python3 --version
+          pip3 --version
 
       - name: Install dependencies
-        shell: cmd
         run: |
-          python -m pip install --upgrade pip
-          if exist requirements.txt pip install -r requirements.txt
+          python3 -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
 
       - name: Run selected module
-        shell: cmd
         run: |
-          set MOD=${{ github.event.inputs.module }}
-          if not exist artifacts\%MOD% mkdir artifacts\%MOD%
-          echo Running %MOD% on self-hosted runner...
-          python src\%MOD%.py > artifacts\%MOD%\run.log 2>&1
+          # Створюємо зміну та папку (синтаксис macOS/Linux)
+          export MOD=${{ github.event.inputs.module }}
+          mkdir -p artifacts/$MOD
+          echo "Running $MOD on macOS self-hosted runner..."
+          
+          # Запуск скрипта
+          python3 src/$MOD.py > artifacts/$MOD/run.log 2>&1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
