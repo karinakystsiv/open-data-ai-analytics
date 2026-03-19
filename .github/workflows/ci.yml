@@ -20,7 +20,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-
         module: [data_load, data_quality_analysis, data_research, visualization]
 
     steps:
@@ -29,7 +28,6 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: Check for changes in module
         id: changed-files
         uses: tj-actions/changed-files@v42
@@ -37,7 +35,6 @@ jobs:
           files: src/${{ matrix.module }}.py
 
       - name: Set up Python
-
         if: |
           github.ref == 'refs/heads/main' ||
           steps.changed-files.outputs.any_changed == 'true' ||
@@ -57,48 +54,42 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run module
+        id: run-module
         if: |
           github.ref == 'refs/heads/main' ||
           steps.changed-files.outputs.any_changed == 'true' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
+        env:
+          MPLBACKEND: Agg
         run: |
-          mkdir -p artifacts/${{ matrix.module }}
+          mkdir -p artifacts/${{ matrix.module }}/figures
           mkdir -p reports/figures
           echo "Запуск модуля ${{ matrix.module }}..."
           python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1
-          mkdir -p artifacts/${{ matrix.module }}/figures
           cp *.png artifacts/${{ matrix.module }}/figures/ 2>/dev/null || true
           cp src/*.png artifacts/${{ matrix.module }}/figures/ 2>/dev/null || true
           cp reports/figures/*.png artifacts/${{ matrix.module }}/figures/ 2>/dev/null || true
           cp reports/*.md artifacts/${{ matrix.module }}/ 2>/dev/null || true
 
       - name: Create HTML report for Pages
-        if: matrix.module == 'visualization'
+        if: matrix.module == 'visualization' && steps.run-module.outcome == 'success'
         run: |
-
           echo "<html><body style='font-family:sans-serif;padding:20px;'><h1>Visualization Results</h1>" > artifacts/${{ matrix.module }}/index.html
           echo "<p>BUILD DATE: $(date)</p><hr>" >> artifacts/${{ matrix.module }}/index.html
-
           for img in artifacts/${{ matrix.module }}/figures/*.png; do
             if [ -f "$img" ]; then
               fname=$(basename "$img")
               echo "<div><p>$fname</p><img src='figures/$fname' width='600'></div>" >> artifacts/${{ matrix.module }}/index.html
             fi
           done
+          echo "</body></html>" >> artifacts/${{ matrix.module }}/index.html
 
-          echo "</body></html>" >> artifacts/${{ matrix.module }}/index.html 
-
-        
       - name: Upload artifacts
-        if: |
-          github.ref == 'refs/heads/main' ||
-          steps.changed-files.outputs.any_changed == 'true' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.module }}
           path: artifacts/${{ matrix.module }}/
-         
 
   deploy-pages:
     needs: run-modules
@@ -110,7 +101,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download all artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: temp_dir/
@@ -125,7 +116,6 @@ jobs:
             sed -i 's|</body>|<hr><h3><a href="data_quality_report.md"> Переглянути Data Quality Report</a></h3></body>|' public/index.html
           fi
           ls -R public
-                 
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
