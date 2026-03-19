@@ -12,7 +12,6 @@ on:
 
 jobs:
   run-module-local:
-    # Вказуємо мітки, які ти щойно налаштувала на своєму Mac
     runs-on: [self-hosted, macOS, X64, local]
 
     steps:
@@ -21,7 +20,6 @@ jobs:
 
       - name: Use system Python
         run: |
-          # На Mac зазвичай використовується python3
           python3 --version
           pip3 --version
 
@@ -30,14 +28,18 @@ jobs:
           python3 -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
 
+      - name: Pre-load Data
+        run: |
+          echo "Preparing data for the module..."
+          python3 src/data_load.py
+
       - name: Run selected module
         run: |
-          # Створюємо зміну та папку (синтаксис macOS/Linux)
           export MOD=${{ github.event.inputs.module }}
           mkdir -p artifacts/$MOD
           echo "Running $MOD on macOS self-hosted runner..."
           
-          # Запуск скрипта
+          # Запускаємо обраний модуль (він уже знайде завантажені дані)
           python3 src/$MOD.py > artifacts/$MOD/run.log 2>&1
 
       - name: Upload artifacts
