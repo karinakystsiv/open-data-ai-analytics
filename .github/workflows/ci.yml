@@ -15,7 +15,6 @@ on:
         options: [all, data_load, data_quality_analysis, data_research, visualization]
 
 jobs:
-  # ЕТАП 1: Завантаження даних (один раз)
   load-data:
     runs-on: ubuntu-latest
     steps:
@@ -40,14 +39,12 @@ jobs:
           path: data/raw/
           retention-days: 1
 
-  # ЕТАП 2: Паралельний запуск модулів
   run-modules:
     needs: load-data
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # Виключаємо data_load з матриці
         module: [data_quality_analysis, data_research, visualization]
 
     steps:
@@ -130,7 +127,6 @@ jobs:
           name: artifacts-${{ matrix.module }}
           path: artifacts/${{ matrix.module }}/
 
-  # ЕТАП 3: Деплой
   deploy-pages:
     needs: run-modules
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
