@@ -1,26 +1,48 @@
-# Data Quality Report: Vehicle Registrations (2024)
+# Звіт про якість даних: Реєстрація ТЗ (2024)
 
-## 1. General Information
-- Total records (rows): 2344544
-- Total columns: 20
+## 1. Загальна інформація
+- **Кількість записів (рядків):** 2344544
+- **Кількість колонок:** 20
+| Колонка | Заповненість | Унікальних значень |
+|---|---|---|
+| PERSON | 2344544/2344544 | 2 |
+| REG_ADDR_KOATUU | 2344543/2344544 | 24028 |
+| OPER_CODE | 2344544/2344544 | 108 |
+| OPER_NAME | 2344544/2344544 | 109 |
+| D_REG | 2344544/2344544 | 366 |
+| DEP_CODE | 2344544/2344544 | 156 |
+| DEP | 2344544/2344544 | 156 |
+| BRAND | 2344544/2344544 | 2114 |
+| MODEL | 2344544/2344544 | 22082 |
+| VIN | 2344372/2344544 | 1832542 |
+| MAKE_YEAR | 2344544/2344544 | 91 |
+| COLOR | 2344544/2344544 | 12 |
+| KIND | 2344544/2344544 | 10 |
+| BODY | 2344544/2344544 | 238 |
+| PURPOSE | 2344544/2344544 | 3 |
+| FUEL | 2258431/2344544 | 13 |
+| CAPACITY | 2158410/2344544 | 3280 |
+| OWN_WEIGHT | 2343508/2344544 | 9876 |
+| TOTAL_WEIGHT | 2343639/2344544 | 5170 |
+| N_REG_NEW | 2310856/2344544 | 1924805 |
 
-## 2. Duplicates Analysis
-- Exact duplicate rows found: 5593
-  - Recommendation: Apply `df.drop_duplicates()` during the data cleaning phase.
+## 2. Аналіз дублікатів
+- Точних дублікатів знайдено: **5593**
+  - Рекомендація: застосувати `df.drop_duplicates()` під час очищення.
 
-## 3. Missing Values (NaN) Analysis
-- Total missing values in the entire dataset: 308049
-- Missing values in critical columns (for hypotheses testing):
-  - `BRAND`: 0 missing values
-  - `MAKE_YEAR`: 0 missing values
-  - `FUEL`: 86113 missing values
-  - `KIND`: 0 missing values
-  - `PURPOSE`: 0 missing values
+## 3. Аналіз пропущених значень (NaN)
+- Загальна кількість пропусків у датасеті: **308049**
+- Пропуски у критичних колонках:
+  - `BRAND`: 0 пропусків
+  - `MAKE_YEAR`: 0 пропусків
+  - `FUEL`: 86113 пропусків
+  - `KIND`: 0 пропусків
+  - `PURPOSE`: 0 пропусків
 
-## 4. Structural Anomalies & Logical Checks
-- Negative values check:
-  - `CAPACITY` < 0: 0 records
-  - `OWN_WEIGHT` < 0: 0 records
-  - `TOTAL_WEIGHT` < 0: 0 records
-- Records where OWN_WEIGHT > TOTAL_WEIGHT: 2131
-- Records with invalid MAKE_YEAR (< 1900 or > 2024): 0
+## 4. Структурні аномалії та логічні перевірки
+- Перевірка від'ємних значень:
+  - `CAPACITY` < 0: 0 записів
+  - `OWN_WEIGHT` < 0: 0 записів
+  - `TOTAL_WEIGHT` < 0: 0 записів
+- Записи де OWN_WEIGHT > TOTAL_WEIGHT: **2131**
+- Записи з некоректним MAKE_YEAR (< 1900 або > 2024): **0**
