@@ -1,13 +1,13 @@
 variable "resource_group_name" {
   description = "Name of the Azure Resource Group"
   type        = string
-  default     = "rg-lab5-karina"
+  default     = "rg-lab6-karina"
 }
 
 variable "location" {
   description = "Azure region for all resources"
   type        = string
-  default     = "centralus"
+  default     = "eastus2"
 }
 
 variable "vm_size" {
