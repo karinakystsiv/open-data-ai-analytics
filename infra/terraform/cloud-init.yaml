@@ -13,3 +13,5 @@ runcmd:
   - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
   - git clone https://github.com/karinakystsiv/open-data-ai-analytics.git /app
   - cd /app && docker compose up -d --build
+  - sleep 30
+  - cd /app && docker compose -f monitoring/docker-compose.monitoring.yml up -d

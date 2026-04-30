@@ -1,7 +1,7 @@
 variable "resource_group_name" {
   description = "Name of the Azure Resource Group"
   type        = string
-  default     = "rg-lab4-karina"
+  default     = "rg-lab5-karina"
 }
 
 variable "location" {

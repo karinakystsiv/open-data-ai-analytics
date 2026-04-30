@@ -1,9 +1,34 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 import os
+import time
 
 app = Flask(__name__)
 
+# Prometheus metrics
+REQUEST_COUNT = Counter('app_requests_total', 'Total request count', ['method', 'endpoint'])
+REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
+
 REPORTS_DIR = "/app/reports"
+
+
+@app.before_request
+def before_request():
+    request._start_time = time.time()
+
+
+@app.after_request
+def after_request(response):
+    if hasattr(request, '_start_time'):
+        latency = time.time() - request._start_time
+        REQUEST_LATENCY.labels(endpoint=request.path).observe(latency)
+    REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
+    return response
+
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 
 @app.route('/')
