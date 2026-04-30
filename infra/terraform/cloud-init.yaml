@@ -6,12 +6,40 @@ packages:
   - git
 
 runcmd:
+  # Docker setup
   - systemctl start docker
   - systemctl enable docker
   - mkdir -p /usr/local/lib/docker/cli-plugins
   - curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
   - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+  # Clone repo
   - git clone https://github.com/karinakystsiv/open-data-ai-analytics.git /app
+
+  # Run data pipeline (generates reports for web app)
   - cd /app && docker compose up -d --build
-  - sleep 30
+  - sleep 60
+
+  # Run monitoring stack
   - cd /app && docker compose -f monitoring/docker-compose.monitoring.yml up -d
+
+  # Build web image for k3s
+  - cd /app && docker build -t web-app:latest ./web
+
+  # Install k3s
+  - curl -sfL https://get.k3s.io | sh -
+  - sleep 30
+
+  # Import web image into k3s containerd
+  - docker save web-app:latest | k3s ctr images import -
+
+  # Install Argo CD
+  - kubectl create namespace argocd
+  - kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  - sleep 60
+
+  # Patch Argo CD server to NodePort for browser access
+  - kubectl patch svc argocd-server -n argocd -p '{"spec":{"type":"NodePort","ports":[{"port":443,"targetPort":8080,"nodePort":30443}]}}'
+
+  # Create reports directory for k8s hostPath volume
+  - mkdir -p /app/reports
